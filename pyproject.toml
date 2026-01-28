@@ -10,6 +10,7 @@ dependencies = [
     "httpx>=0.28.1",
     "langgraph>=1.0.7",
     "openai>=2.15.0",
+    "pdfminer-six>=20260107",
     "pydantic>=2.12.5",
     "youtube-transcript-api>=1.2.3",
 ]

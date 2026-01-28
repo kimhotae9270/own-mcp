@@ -970,6 +970,19 @@ wheels = [
 ]
 
 [[package]]
+name = "pdfminer-six"
+version = "20260107"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "charset-normalizer" },
+    { name = "cryptography" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/34/a4/5cec1112009f0439a5ca6afa8ace321f0ab2f48da3255b7a1c8953014670/pdfminer_six-20260107.tar.gz", hash = "sha256:96bfd431e3577a55a0efd25676968ca4ce8fd5b53f14565f85716ff363889602", size = 8512094, upload-time = "2026-01-07T13:29:12.937Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/8b/28c4eaec9d6b036a52cb44720408f26b1a143ca9bce76cc19e8f5de00ab4/pdfminer_six-20260107-py3-none-any.whl", hash = "sha256:366585ba97e80dffa8f00cebe303d2f381884d8637af4ce422f1df3ef38111a9", size = 6592252, upload-time = "2026-01-07T13:29:10.742Z" },
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1203,6 +1216,7 @@ dependencies = [
     { name = "httpx" },
     { name = "langgraph" },
     { name = "openai" },
+    { name = "pdfminer-six" },
     { name = "pydantic" },
     { name = "youtube-transcript-api" },
 ]
@@ -1215,6 +1229,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "langgraph", specifier = ">=1.0.7" },
     { name = "openai", specifier = ">=2.15.0" },
+    { name = "pdfminer-six", specifier = ">=20260107" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "youtube-transcript-api", specifier = ">=1.2.3" },
 ]

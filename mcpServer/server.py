@@ -3,9 +3,10 @@ from dotenv import load_dotenv
 load_dotenv()  # .env 로드
 from fastmcp import FastMCP
 from tools import register_all_tools
+from llm.config import load_llm_config
 
 mcp = FastMCP(name="KB-Ingest-Summarizer")
-
+load_llm_config()
 # 모든 tool 모듈을 여기서 한 번에 등록
 register_all_tools(mcp)
 
