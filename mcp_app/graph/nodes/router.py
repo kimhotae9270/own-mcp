@@ -1,7 +1,7 @@
 from mcp_app.graph.state import AgentState
-from ..embedding.client import embed
-from ..embedding.similarity import cosine
-from ..embedding.loader import load_mcp_embeddings
+from mcp_app.embedding.client import embed
+from mcp_app.embedding.similarity import cosine
+from mcp_app.embedding.loader import load_mcp_embeddings
 import re
 
 URL_PATTERN = re.compile(r"https?://\S+")
