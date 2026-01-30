@@ -11,6 +11,8 @@ load_llm_config()
 register_all_tools(mcp)
 
 if __name__ == "__main__":
+
+    print("✅ MCP embeddings loaded")
     # FastMCP 표준 실행
     mcp.run(
         transport="http",

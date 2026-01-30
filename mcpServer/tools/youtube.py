@@ -16,7 +16,7 @@ from llm.call import chat, LLMNotConfigured  # 네가 chat_async -> chat 로 바
 _YT_ID_RE = re.compile(r"(?:v=|\/)([0-9A-Za-z_-]{11})(?:\?|&|$)")
 
 # ✅ 속도 튜닝 파라미터(환경변수로 조절)
-YT_LLM_PARALLEL = int(os.getenv("YT_LLM_PARALLEL", "6"))      # 동시 호출 수
+YT_LLM_PARALLEL = int(os.getenv("YT_LLM_PARALLEL", "8"))      # 동시 호출 수
 YT_WINDOW_SEC = int(os.getenv("YT_WINDOW_SEC", "90"))         # 병합 윈도우(초)
 YT_MAX_CHUNKS = int(os.getenv("YT_MAX_CHUNKS", "8"))          # 요약할 청크 개수 상한
 

@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 from openai import AsyncOpenAI
 from fastmcp import Client as MCPClient
 
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 MCP_URL = os.getenv("MCP_URL", "http://127.0.0.1:8000")
 
 oai = AsyncOpenAI()

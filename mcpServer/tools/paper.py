@@ -25,7 +25,7 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 MAX_PDF_MB = int(os.getenv("PAPER_MAX_PDF_MB", "80"))
 MAX_PAGES = int(os.getenv("PAPER_MAX_PAGES", "0"))  # 0이면 전체, 아니면 앞 N페이지
-PAPER_LLM_PARALLEL = int(os.getenv("PAPER_LLM_PARALLEL", "6"))  # 섹션 요약 동시성 제한
+PAPER_LLM_PARALLEL = int(os.getenv("PAPER_LLM_PARALLEL", "8"))  # 섹션 요약 동시성 제한
 
 
 # -----------------------------
