@@ -3,7 +3,9 @@ from .client import embed
 from . import cache
 from .config import EMBEDDING_META
 
-PROMPT_DIR = "C:/Users/아이씨티웨이/PycharmProjects/PythonProject2/mcp_app/graph/prompts"
+BASE_DIR = Path(__file__).resolve().parent
+
+PROMPT_DIR = BASE_DIR / "../graph/prompts"
 
 def load_mcp_embeddings() -> dict[str, list[float]]:
 
