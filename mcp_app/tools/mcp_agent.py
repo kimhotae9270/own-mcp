@@ -5,10 +5,15 @@ from typing import List, Dict, Any
 from openai import AsyncOpenAI
 from fastmcp import Client as MCPClient
 
+from typing import Any, Dict, List
+import json
+
+from mcp_app.llm.client import get_llm
+
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 MCP_URL = os.getenv("MCP_URL", "http://127.0.0.1:8000")
 
-oai = AsyncOpenAI()
+
 
 
 def mcp_tools_to_openai_tools(mcp_tools) -> List[Dict[str, Any]]:
@@ -30,10 +35,12 @@ def mcp_tools_to_openai_tools(mcp_tools) -> List[Dict[str, Any]]:
     return tools
 
 
+
 async def run_mcp_agent(user_text: str) -> str:
     """
     LLM → tool_calls → MCP → LLM 재호출
     """
+    llm = get_llm()              # ✅ 여기서 가져옴
     mcp = MCPClient(MCP_URL)
 
     async with mcp:
@@ -54,7 +61,7 @@ async def run_mcp_agent(user_text: str) -> str:
         ]
 
         # 2) 1차 호출 (tool 판단)
-        resp = await oai.chat.completions.create(
+        resp = await llm.chat.completions.create(
             model=MODEL,
             messages=messages,
             tools=openai_tools,
@@ -91,7 +98,6 @@ async def run_mcp_agent(user_text: str) -> str:
             args = json.loads(tc.function.arguments or "{}")
             result = await mcp.call_tool(tc.function.name, args)
 
-            # CallToolResult는 JSON 직렬화 안 되므로 str()로 안전 처리
             messages.append(
                 {
                     "role": "tool",
@@ -101,9 +107,10 @@ async def run_mcp_agent(user_text: str) -> str:
             )
 
         # 5) 재호출 → 최종 답변
-        resp2 = await oai.chat.completions.create(
+        resp2 = await llm.chat.completions.create(
             model=MODEL,
             messages=messages,
         )
 
         return resp2.choices[0].message.content or ""
+

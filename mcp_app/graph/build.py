@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, END
 
 from mcp_app.graph.state import AgentState
-from mcp_app.graph.nodes.router import router_node
+from mcp_app.graph.nodes.router.router import router_node
 from mcp_app.graph.nodes.chat import chat_agent_node
 from mcp_app.graph.nodes.mcp import mcp_agent_node
 
@@ -15,7 +15,7 @@ def build_graph():
 
     g.add_node("router", router_node)
     g.add_node("CHAT", chat_agent_node)
-    g.add_node("MCP", mcp_agent_node)
+    g.add_node("SUMMARY_MCP", mcp_agent_node)
 
     g.set_entry_point("router")
 
@@ -24,12 +24,12 @@ def build_graph():
         route_selector,
         {
             "CHAT": "CHAT",
-            "MCP": "MCP",
+            "SUMMARY_MCP": "SUMMARY_MCP",
         },
     )
 
     g.add_edge("CHAT", END)
-    g.add_edge("MCP", END)
+    g.add_edge("SUMMARY_MCP", END)
 
     return g.compile()
 

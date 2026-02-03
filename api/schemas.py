@@ -2,7 +2,7 @@ from typing import Literal, Optional, List
 from pydantic import BaseModel, Field
 
 
-Mode = Literal["AUTO", "CHAT", "MCP"]
+Mode = Literal["AUTO", "CHAT", "SUMMARY_MCP"]
 
 
 class ChatRequest(BaseModel):
