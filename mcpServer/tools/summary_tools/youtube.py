@@ -142,6 +142,17 @@ async def summarize_chunk_short(cfg: LLMConfig, chunk_text: str) -> str:
 def register_youtube_tools(mcp: FastMCP) -> None:
     @mcp.tool
     async def youtube_summarize(url: str) -> dict:
+        """
+        YouTube 영상의 내용을 요약합니다.
+
+        Use when:
+        - 사용자가 유튜브 영상 요약을 요청한 경우
+        - 유튜브 링크가 제공된 경우
+        - 영상의 핵심 내용을 빠르게 파악하고 싶은 경우
+
+        Tags: summary
+        """
+
         vid = _extract_video_id(url)
         tr = _fetch_transcript_text(vid)
 

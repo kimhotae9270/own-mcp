@@ -1,10 +1,9 @@
 # tools/__init__.py
 from fastmcp import FastMCP
 
-from .core import register_core_tools
-from .youtube import register_youtube_tools
-
-from .paper import register_paper_tools
+from .summary_tools.core import register_core_tools
+from .summary_tools.youtube import register_youtube_tools
+from .summary_tools.paper import register_paper_tools
 
 
 def register_all_tools(mcp: FastMCP) -> None:

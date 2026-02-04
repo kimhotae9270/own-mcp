@@ -1,5 +1,4 @@
 import os
-from openai import AsyncOpenAI
 from mcp_app.llm.client import get_llm
 from mcp_app.graph.state import AgentState
 

@@ -283,12 +283,17 @@ def register_paper_tools(mcp: FastMCP) -> None:
     @mcp.tool
     async def paper_summarize(url: str) -> Dict[str, str]:
         """
-        arXiv PDF/abs/id를 받아서:
-        - PDF 다운로드 + 텍스트 추출(캐시)
-        - 섹션 헤딩 기반 분리
-        - 핵심 섹션만 선택
-        - 섹션 요약만 생성(병렬)
-        - 결과를 JSON/Markdown으로 반환 (최종 종합요약 없음)
+            arXiv 논문(PDF, URL, 또는 논문 ID)을 요약합니다.
+
+            Use when:
+            - 사용자가 논문 요약을 요청한 경우
+            - arXiv 링크 또는 논문 파일을 제공한 경우
+            - 연구 논문의 핵심 내용을 알고 싶어하는 경우
+
+            Tags: summary
+
+            Example:
+            - 이 논문 요약해줘 https://arxiv.org/abs/1706.03762
         """
         try:
             pdf_url = _to_pdf_url(url)

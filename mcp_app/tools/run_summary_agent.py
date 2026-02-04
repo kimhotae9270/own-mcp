@@ -7,53 +7,47 @@ from fastmcp import Client as MCPClient
 
 from typing import Any, Dict, List
 import json
-
+from mcp_app.tool_registry.adapters import mcp_tools_to_openai_tools
 from mcp_app.llm.client import get_llm
 
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 MCP_URL = os.getenv("MCP_URL", "http://127.0.0.1:8000")
 
+def has_tag(tool, target_tag: str) -> bool:
+    desc = (tool.description or "").lower()
+
+    for line in desc.split("\n"):
+        if line.strip().startswith("tags:"):
+            tags = [t.strip() for t in line.replace("Tags:", "").replace("tags:", "").split(",")]
+            return target_tag.lower() in tags
+
+    return False
 
 
-
-def mcp_tools_to_openai_tools(mcp_tools) -> List[Dict[str, Any]]:
-    """
-    fastmcp list_tools() → OpenAI tools schema 변환
-    """
-    tools = []
-    for t in mcp_tools:
-        tools.append(
-            {
-                "type": "function",
-                "function": {
-                    "name": t.name,
-                    "description": t.description or "",
-                    "parameters": getattr(t, "inputSchema", {"type": "object"}),
-                },
-            }
-        )
-    return tools
-
-
-
-async def run_mcp_agent(user_text: str) -> str:
+async def run_summary_agent(user_text: str) -> str:
     """
     LLM → tool_calls → MCP → LLM 재호출
     """
-    llm = get_llm()              # ✅ 여기서 가져옴
+    llm = get_llm()
     mcp = MCPClient(MCP_URL)
 
     async with mcp:
         # 1) MCP tools
         mcp_tools = await mcp.list_tools()
-        openai_tools = mcp_tools_to_openai_tools(mcp_tools)
+
+        summary_tools = [
+            t for t in mcp_tools
+            if has_tag(t, "summary")
+        ]
+
+        openai_tools = mcp_tools_to_openai_tools(summary_tools)
 
         messages: List[Dict[str, Any]] = [
             {
                 "role": "system",
                 "content": (
                     "You are a tool-using assistant.\n"
-                    "If a tool can produce an exact result, use it.\n"
+                    "You are a summarization assistant. Use the provided tools whenever possible.\n"
                     "After using tools, answer concisely."
                 ),
             },
