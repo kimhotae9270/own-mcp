@@ -290,7 +290,7 @@ def register_paper_tools(mcp: FastMCP) -> None:
             - arXiv 링크 또는 논문 파일을 제공한 경우
             - 연구 논문의 핵심 내용을 알고 싶어하는 경우
 
-            Tags: summary
+            [TAG:summary]
 
             Example:
             - 이 논문 요약해줘 https://arxiv.org/abs/1706.03762

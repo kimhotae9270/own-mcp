@@ -4,6 +4,9 @@ from typing import List, Dict, Any
 
 from openai import AsyncOpenAI
 from fastmcp import Client as MCPClient
+from ..tool_registry.resolver import get_tools_by_tags
+from ..tool_registry.client import get_mcp_client
+
 
 from typing import Any, Dict, List
 import json
@@ -11,7 +14,6 @@ from mcp_app.tool_registry.adapters import mcp_tools_to_openai_tools
 from mcp_app.llm.client import get_llm
 
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
-MCP_URL = os.getenv("MCP_URL", "http://127.0.0.1:8000")
 
 def has_tag(tool, target_tag: str) -> bool:
     desc = (tool.description or "").lower()
@@ -29,16 +31,12 @@ async def run_summary_agent(user_text: str) -> str:
     LLM → tool_calls → MCP → LLM 재호출
     """
     llm = get_llm()
-    mcp = MCPClient(MCP_URL)
+    mcp = get_mcp_client()
 
     async with mcp:
         # 1) MCP tools
-        mcp_tools = await mcp.list_tools()
 
-        summary_tools = [
-            t for t in mcp_tools
-            if has_tag(t, "summary")
-        ]
+        summary_tools = await get_tools_by_tags(["summary"])
 
         openai_tools = mcp_tools_to_openai_tools(summary_tools)
 

@@ -150,7 +150,7 @@ def register_youtube_tools(mcp: FastMCP) -> None:
         - 유튜브 링크가 제공된 경우
         - 영상의 핵심 내용을 빠르게 파악하고 싶은 경우
 
-        Tags: summary
+        [TAG:summary]
         """
 
         vid = _extract_video_id(url)
