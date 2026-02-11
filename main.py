@@ -1,6 +1,8 @@
 from fastapi import FastAPI
-from api.routes import attach_routes
+from api.routers.routes import attach_routes
 from dotenv import load_dotenv
+from api.routers.auth import router as auth_router
+
 load_dotenv()  # .env 로드
 # 여기만 나중에 바뀝니다:
 # - 지금은 graph_app import
@@ -9,5 +11,5 @@ from mcp_app.graph.build import graph_app  # 너의 LangGraph compile 결과
 from mcp_app.embedding.loader import load_mcp_embeddings
 load_mcp_embeddings()
 app = FastAPI(title="MCP Agent API")
-
+app.include_router(auth_router)
 app.include_router(attach_routes(graph_app))

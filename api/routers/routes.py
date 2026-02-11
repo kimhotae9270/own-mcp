@@ -24,3 +24,5 @@ def attach_routes(graph_app):
         )
 
     return router
+
+
