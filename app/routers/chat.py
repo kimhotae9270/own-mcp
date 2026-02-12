@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from api.schemas import ChatRequest, ChatResponse
+from app.schemas import ChatRequest, ChatResponse
 
-router = APIRouter(prefix="/api", tags=["chat"])
+router = APIRouter(prefix="/app", tags=["chat"])
 
 
 def attach_routes(graph_app):

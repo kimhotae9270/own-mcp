@@ -1,9 +1,11 @@
-from fastapi import FastAPI
-from api.routers.routes import attach_routes
 from dotenv import load_dotenv
-from api.routers.auth import router as auth_router
-
 load_dotenv()  # .env 로드
+from fastapi import FastAPI
+from app.routers.chat import attach_routes
+
+from app.routers.auth import router as auth_router
+
+
 # 여기만 나중에 바뀝니다:
 # - 지금은 graph_app import
 # - 나중에는 DI/팩토리로 교체 가능
