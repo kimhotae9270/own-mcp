@@ -2,7 +2,7 @@ import requests
 from google_auth_oauthlib.flow import Flow
 from app.core.config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, GOOGLE_SCOPES
 
-def make_flow(state: str | None = None) -> Flow:
+def make_flow(state: str | None = None, use_pkce: bool = True) -> Flow:
     return Flow.from_client_config(
         {
             "web": {
@@ -15,7 +15,7 @@ def make_flow(state: str | None = None) -> Flow:
         scopes=GOOGLE_SCOPES,
         redirect_uri=GOOGLE_REDIRECT_URI,
         state=state,
-        autogenerate_code_verifier=True
+        autogenerate_code_verifier=use_pkce
     )
 
 def fetch_userinfo(access_token: str) -> dict:

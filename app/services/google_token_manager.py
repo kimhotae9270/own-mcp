@@ -85,7 +85,7 @@ def get_valid_google_access_token(user_id: int) -> str:
     with db_conn() as conn:
         tokens = _get_tokens_for_user(conn, user_id)
 
-        if not _needs_refresh(tokens.expiry):
+        if tokens.access_token and not _needs_refresh(tokens.expiry):
             return tokens.access_token
 
         if not tokens.refresh_token:

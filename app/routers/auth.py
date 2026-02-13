@@ -13,42 +13,47 @@ router = APIRouter(tags=["auth"])
 STATE_TTL_MINUTES = 5
 
 
-def _create_state_in_db(state: str) -> None:
+def _create_state_in_db(state: str, code_verifier: str) -> None:
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=STATE_TTL_MINUTES)
     with db_conn() as conn:
         with conn.cursor() as cur:
             # 만료된 state 정리 (가볍게)
             cur.execute("DELETE FROM oauth_states WHERE expires_at < now()")
             cur.execute(
-                "INSERT INTO oauth_states(state, expires_at) VALUES (%s, %s)",
-                (state, expires_at),
+                "INSERT INTO oauth_states(state, code_verifier, expires_at) VALUES (%s, %s, %s)",
+                (state, code_verifier, expires_at),
             )
 
-
-def _consume_state_from_db(state: str) -> None:
+def _consume_state_from_db(state: str) -> str:
     with db_conn() as conn:
         with conn.cursor() as cur:
-            # 있으면 지우면서 검증(재사용 방지)
             cur.execute(
-                "DELETE FROM oauth_states WHERE state=%s AND expires_at >= now() RETURNING state",
+                """
+                DELETE FROM oauth_states
+                WHERE state=%s AND expires_at >= now()
+                RETURNING code_verifier
+                """,
                 (state,),
             )
             row = cur.fetchone()
-            if not row:
+            if not row or not row[0]:
                 raise HTTPException(status_code=400, detail="Invalid or expired state")
+            return row[0]
 
 
 @router.get("/auth/google/login")
 def google_login():
     state = secrets.token_urlsafe(32)
-    _create_state_in_db(state)
 
-    flow = make_flow(state=state)
+    flow = make_flow(state=state, use_pkce=True)
+
     auth_url, _ = flow.authorization_url(
-        access_type="offline",     # refresh_token 요청
-        prompt="consent",          # refresh_token 재발급 유도(처음 연결/권한변경 등)
+        access_type="offline",
         include_granted_scopes="true",
     )
+
+    code_verifier = flow.code_verifier
+    _create_state_in_db(state, code_verifier)
 
     return RedirectResponse(auth_url)
 
@@ -56,10 +61,11 @@ def google_login():
 @router.get("/oauth/callback")
 def oauth_callback(code: str, state: str):
     # 1) state 검증(공격 방지)
-    _consume_state_from_db(state)
+    code_verifier  = _consume_state_from_db(state)
 
     # 2) code -> token 교환
-    flow = make_flow(state=state)
+    flow = make_flow(state=state, use_pkce=False)
+    flow.code_verifier = code_verifier
     try:
         flow.fetch_token(code=code)
     except Exception as e:
