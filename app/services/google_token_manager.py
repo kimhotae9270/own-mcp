@@ -31,6 +31,7 @@ def _get_tokens_for_user(conn, user_id: int) -> GoogleTokens:
             FROM oauth_accounts
             WHERE user_id=%s AND provider='google'
             LIMIT 1
+            FOR UPDATE
             """,
             (user_id,),
         )
@@ -39,7 +40,11 @@ def _get_tokens_for_user(conn, user_id: int) -> GoogleTokens:
             raise RuntimeError("Google account not connected for this user")
 
         access_token, refresh_token, expiry = row
-        # psycopg2가 TIMESTAMPTZ를 datetime으로 반환 (tz-aware가 보통)
+
+        # 안전: tz-naive면 UTC로 간주
+        if expiry is not None and expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+
         return GoogleTokens(access_token=access_token, refresh_token=refresh_token, expiry=expiry)
 
 
@@ -107,5 +112,5 @@ def get_valid_google_access_token(user_id: int) -> str:
                 """,
                 (new_access_token, new_expiry, user_id),
             )
-
+        conn.commit()
         return new_access_token

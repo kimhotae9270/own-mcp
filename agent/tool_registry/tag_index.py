@@ -1,5 +1,5 @@
 # tag_index.py
-from .registry import get_all_tools
+from .registry import list_tools
 import re
 _tag_index: dict[str, list] = None
 
@@ -17,7 +17,7 @@ async def build_tag_index():
     if _tag_index is not None:
         return _tag_index
 
-    tools = await get_all_tools()
+    tools = await list_tools()
 
     index = {}
 

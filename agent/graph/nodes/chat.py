@@ -1,6 +1,6 @@
 import os
-from mcp_app.llm.client import get_llm
-from mcp_app.graph.state import AgentState
+from agent.llm.client import get_llm
+from agent.graph.state import AgentState
 
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 

@@ -1,17 +1,27 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException,Request, Response
 from app.core.db import db_conn
-from app.core.security import issue_internal_jwt
+import jwt
 from app.services.google_oauth import make_flow, fetch_userinfo
 from app.core.config import GOOGLE_SCOPES
 from fastapi.responses import RedirectResponse
+from app.core.config import JWT_SECRET, JWT_ALG
+from app.core.security import (
+    issue_access_jwt, issue_refresh_jwt,
+    store_refresh_jti,
+    ACCESS_COOKIE, REFRESH_COOKIE,
+    verify_refresh_and_consume,
+    revoke_user_refresh_tokens,
+)
 
 router = APIRouter(tags=["auth"])
 
 STATE_TTL_MINUTES = 5
-
+FRONTEND_URL = "http://localhost:3000"  # 너 프론트 주소
+COOKIE_SECURE = False                  # 배포 HTTPS면 True
+COOKIE_SAMESITE = "lax"
 
 def _create_state_in_db(state: str, code_verifier: str) -> None:
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=STATE_TTL_MINUTES)
@@ -150,11 +160,95 @@ def oauth_callback(code: str, state: str):
             )
 
     # 5) 내부 JWT 발급(이제부터 우리 서비스 인증은 이 토큰으로)
-    internal_jwt = issue_internal_jwt(user_id)
+    access = issue_access_jwt(user_id)
 
-    return {
-        "status": "google connected",
-        "user": {"id": user_id, "email": email, "name": name, "google_sub": google_sub},
-        "access_token": internal_jwt,
-        "token_type": "bearer",
-    }
+    jti = secrets.token_urlsafe(32)
+    refresh_exp = datetime.now(timezone.utc) + timedelta(days=14)
+    store_refresh_jti(user_id=user_id, jti=jti, expires_at=refresh_exp)
+    refresh = issue_refresh_jwt(user_id, jti)
+
+    resp = RedirectResponse(url=f"{FRONTEND_URL}/oauth/success")
+
+    resp.set_cookie(
+        key=ACCESS_COOKIE,
+        value=access,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        max_age=60 * 30,
+        path="/",
+    )
+
+    # ✅ refresh는 refresh endpoint로만 보내게 path 제한(권장)
+    resp.set_cookie(
+        key=REFRESH_COOKIE,
+        value=refresh,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        max_age=60 * 60 * 24 * 14,
+        path="/auth/refresh",
+    )
+
+    return resp
+
+@router.post("/auth/refresh")
+def refresh_access_token(request: Request, response: Response):
+    refresh = request.cookies.get(REFRESH_COOKIE)
+    if not refresh:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+
+    # 1) JWT 서명/exp 검증
+    payload = jwt.decode(refresh, JWT_SECRET, algorithms=[JWT_ALG])
+    if payload.get("type") != "refresh":
+        raise HTTPException(status_code=401, detail="Invalid token type")
+
+    jti = payload.get("jti")
+    if not jti:
+        raise HTTPException(status_code=401, detail="Missing jti")
+
+    # 2) DB에서 jti 유효성 확인 + 소비(회전: 한번 쓰면 revoked)
+    user_id = verify_refresh_and_consume(jti)
+
+    # 3) 새 access + 새 refresh 발급(회전)
+    new_access = issue_access_jwt(user_id)
+
+    new_jti = secrets.token_urlsafe(32)
+    refresh_exp = datetime.now(timezone.utc) + timedelta(days=14)
+    store_refresh_jti(user_id=user_id, jti=new_jti, expires_at=refresh_exp)
+    new_refresh = issue_refresh_jwt(user_id, new_jti)
+
+    response.set_cookie(
+        key=ACCESS_COOKIE,
+        value=new_access,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        max_age=60 * 30,
+        path="/",
+    )
+    response.set_cookie(
+        key=REFRESH_COOKIE,
+        value=new_refresh,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        max_age=60 * 60 * 24 * 14,
+        path="/auth/refresh",
+    )
+    return {"ok": True}
+
+@router.post("/auth/logout")
+def logout(request: Request, response: Response, user_id: int = None):
+    # access가 살아있으면 user_id를 얻어서 해당 유저 refresh 전부 폐기(권장)
+    try:
+        # access 쿠키로부터 uid 가져오는 함수를 쓰면 더 좋음
+        from app.core.security import get_current_user_id
+        user_id = get_current_user_id(request)
+        revoke_user_refresh_tokens(user_id)
+    except Exception:
+        pass
+
+    response.delete_cookie(key=ACCESS_COOKIE, path="/")
+    response.delete_cookie(key=REFRESH_COOKIE, path="/auth/refresh")
+    return {"ok": True}

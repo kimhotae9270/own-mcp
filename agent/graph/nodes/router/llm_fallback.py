@@ -1,4 +1,4 @@
-from mcp_app.llm.client import get_llm
+from agent.llm.client import get_llm
 
 async def llm_fallback_route(text: str) -> str:
     llm = get_llm()
@@ -9,7 +9,7 @@ async def llm_fallback_route(text: str) -> str:
             
             카테고리:
             - CHAT: 일반 대화, 설명, 질문
-            - SUMMARY_MCP: 요약, 분석, 도구 사용이 필요한 경우
+            - CALENDAR: 캘린더 등록,삭제,업데이트 등
             
             사용자 입력:
             {text}

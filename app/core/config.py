@@ -3,7 +3,8 @@ import os
 DATABASE_URL = os.getenv("DATABASE_URL")  # Neon connection string
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-
+INTERNAL_JWT_SECRET = os.getenv("INTERNAL_JWT_SECRET")
+INTERNAL_JWT_ISSUER = os.getenv("INTERNAL_JWT_ISSUER")
 # 로컬 개발용. 배포 시 https 도메인으로 바꾸세요.
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 

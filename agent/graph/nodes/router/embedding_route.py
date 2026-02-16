@@ -1,8 +1,8 @@
 # graph/router/embedding_route.py
 
-from mcp_app.embedding.client import embed
-from mcp_app.embedding.similarity import cosine
-from mcp_app.embedding.loader import load_mcp_embeddings
+from agent.embedding.client import embed
+from agent.embedding.similarity import cosine
+from agent.embedding.loader import load_mcp_embeddings
 from .constants import EMBEDDING_THRESHOLD
 import re
 
@@ -24,6 +24,6 @@ def embedding_route(text: str) -> tuple[str | None, str | None, float]:
             best_score = score
 
     if best_score >= EMBEDDING_THRESHOLD:
-        return "SUMMARY_MCP", best_tool, best_score
+        return "CALENDAR", best_tool, best_score
 
     return None, None, best_score

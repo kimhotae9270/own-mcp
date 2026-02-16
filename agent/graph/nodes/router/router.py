@@ -1,6 +1,6 @@
 # graph/router/router.py
 
-from mcp_app.graph.state import AgentState
+from agent.graph.state import AgentState
 from .heuristics import heuristic_route
 from .embedding_route import embedding_route
 from .llm_fallback import llm_fallback_route
@@ -17,9 +17,9 @@ async def router_node(state: AgentState) -> AgentState:
         trace.append("router: forced CHAT")
         return {**state, "route": "CHAT", "trace": trace}
 
-    if mode == "SUMMARY_MCP":
-        trace.append("router: forced SUMMARY_MCP")
-        return {**state, "route": "SUMMARY_MCP", "trace": trace}
+    if mode == "CALENDAR":
+        trace.append("router: forced CALENDAR")
+        return {**state, "route": "CALENDAR", "trace": trace}
 
     # 2. heuristic
     route = heuristic_route(text)
@@ -32,7 +32,7 @@ async def router_node(state: AgentState) -> AgentState:
     trace.append(f"router: embedding score={score:.3f}, tool={tool}")
 
     if route:
-        trace.append("router: embedding -> SUMMARY_MCP")
+        trace.append("router: embedding -> CALENDAR")
         return {
             **state,
             "route": route,
