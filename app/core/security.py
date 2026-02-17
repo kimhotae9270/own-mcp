@@ -12,7 +12,7 @@ ACCESS_COOKIE = "access_token"
 REFRESH_COOKIE = "refresh_token"
 
 ACCESS_EXPIRE_MINUTES = 30
-REFRESH_EXPIRE_DAYS = 14
+REFRESH_EXPIRE_DAYS = 7
 
 
 def issue_access_jwt(user_id: int) -> str:
@@ -115,3 +115,14 @@ def get_current_user_id(request: Request) -> int:
     if uid is None:
         raise HTTPException(status_code=401, detail="Invalid token payload")
     return int(uid)
+
+def verify_refresh_token(token: str) -> dict:
+    payload = _decode(token)
+
+    if payload.get("type") != "refresh":
+        raise HTTPException(status_code=401, detail="Invalid token type")
+
+    if payload.get("uid") is None or payload.get("jti") is None:
+        raise HTTPException(status_code=401, detail="Invalid refresh token payload")
+
+    return payload

@@ -40,6 +40,7 @@ def _calendar_request(
     )
 
     if resp.status_code >= 400:
+
         return {
             "ok": False,
             "status": resp.status_code,
@@ -47,6 +48,7 @@ def _calendar_request(
         }
 
     if resp.status_code == 204:
+
         return {"ok": True}
 
     return {"ok": True, "data": resp.json()}
@@ -60,6 +62,8 @@ class CalendarCreateEventArgs(BaseModel):
     title: str = Field(..., description="Event title.")
     start: str = Field(..., description="Start datetime (ISO 8601 with timezone).")
     end: str = Field(..., description="End datetime (ISO 8601 with timezone).")
+    all_day: bool = Field(False,
+                          description="If true, treat start/end as dates (YYYY-MM-DD) and create an all-day event.")
     location: Optional[str] = Field(None, description="Optional location.")
     description: Optional[str] = Field(None, description="Optional description.")
     calendar_id: str = Field("primary", description="Calendar ID (default: primary).")
@@ -77,7 +81,7 @@ async def calendar_create_event(args: CalendarCreateEventArgs, ctx: dict) -> dic
 
     # 🔐 항상 유효한 토큰 보장
     access_token = get_valid_google_access_token(user_id)
-
+    print("캘린더 실행",user_id)
     body = {
         "summary": args.title,
         "location": args.location,
@@ -86,9 +90,15 @@ async def calendar_create_event(args: CalendarCreateEventArgs, ctx: dict) -> dic
         "end": {"dateTime": args.end},
     }
 
-    if args.timezone:
-        body["start"]["timeZone"] = args.timezone
-        body["end"]["timeZone"] = args.timezone
+    if args.all_day:
+        body["start"] = {"date": args.start}
+        body["end"] = {"date": args.end}  # all-day는 end가 '다음날'이어야 함
+    else:
+        body["start"] = {"dateTime": args.start}
+        body["end"] = {"dateTime": args.end}
+        if args.timezone:
+            body["start"]["timeZone"] = args.timezone
+            body["end"]["timeZone"] = args.timezone
 
     return _calendar_request(
         access_token=access_token,

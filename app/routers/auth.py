@@ -7,13 +7,14 @@ import jwt
 from app.services.google_oauth import make_flow, fetch_userinfo
 from app.core.config import GOOGLE_SCOPES
 from fastapi.responses import RedirectResponse
-from app.core.config import JWT_SECRET, JWT_ALG
 from app.core.security import (
     issue_access_jwt, issue_refresh_jwt,
     store_refresh_jti,
     ACCESS_COOKIE, REFRESH_COOKIE,
     verify_refresh_and_consume,
     revoke_user_refresh_tokens,
+    verify_refresh_token,
+    REFRESH_EXPIRE_DAYS
 )
 
 router = APIRouter(tags=["auth"])
@@ -192,32 +193,33 @@ def oauth_callback(code: str, state: str):
 
     return resp
 
+
+
 @router.post("/auth/refresh")
 def refresh_access_token(request: Request, response: Response):
     refresh = request.cookies.get(REFRESH_COOKIE)
     if not refresh:
         raise HTTPException(status_code=401, detail="Missing refresh token")
 
-    # 1) JWT 서명/exp 검증
-    payload = jwt.decode(refresh, JWT_SECRET, algorithms=[JWT_ALG])
-    if payload.get("type") != "refresh":
-        raise HTTPException(status_code=401, detail="Invalid token type")
+    # 1) refresh JWT 검증 (type/jti)
+    payload = verify_refresh_token(refresh)
+    old_jti = payload["jti"]
 
-    jti = payload.get("jti")
-    if not jti:
-        raise HTTPException(status_code=401, detail="Missing jti")
+    # 2) DB에서 old_jti 유효 확인 + 소비(회전)
+    user_id = verify_refresh_and_consume(old_jti)
 
-    # 2) DB에서 jti 유효성 확인 + 소비(회전: 한번 쓰면 revoked)
-    user_id = verify_refresh_and_consume(jti)
-
-    # 3) 새 access + 새 refresh 발급(회전)
+    # 3) 새 access 발급
     new_access = issue_access_jwt(user_id)
 
+    # 4) 새 refresh 발급 (rolling: now + 7일)
+    now = datetime.now(timezone.utc)
+    new_refresh_exp = now + timedelta(days=REFRESH_EXPIRE_DAYS)
+
     new_jti = secrets.token_urlsafe(32)
-    refresh_exp = datetime.now(timezone.utc) + timedelta(days=14)
-    store_refresh_jti(user_id=user_id, jti=new_jti, expires_at=refresh_exp)
+    store_refresh_jti(user_id=user_id, jti=new_jti, expires_at=new_refresh_exp)
     new_refresh = issue_refresh_jwt(user_id, new_jti)
 
+    # 5) 쿠키 세팅
     response.set_cookie(
         key=ACCESS_COOKIE,
         value=new_access,
@@ -233,7 +235,7 @@ def refresh_access_token(request: Request, response: Response):
         httponly=True,
         secure=COOKIE_SECURE,
         samesite=COOKIE_SAMESITE,
-        max_age=60 * 60 * 24 * 14,
+        max_age=int((new_refresh_exp - now).total_seconds()),
         path="/auth/refresh",
     )
     return {"ok": True}
