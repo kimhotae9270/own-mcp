@@ -80,7 +80,7 @@ async def calendar_create_event(args: CalendarCreateEventArgs, ctx: dict) -> dic
     user_id = ctx["user_id"]
 
     # 🔐 항상 유효한 토큰 보장
-    access_token = get_valid_google_access_token(user_id)
+    access_token = await get_valid_google_access_token(user_id)
     print("캘린더 실행",user_id)
     body = {
         "summary": args.title,
@@ -129,7 +129,7 @@ class CalendarListEventsArgs(BaseModel):
 )
 async def calendar_list_events(args: CalendarListEventsArgs, ctx: dict) -> dict:
     user_id = ctx["user_id"]
-    access_token = get_valid_google_access_token(user_id)
+    access_token = await get_valid_google_access_token(user_id)
 
     params = {
         "maxResults": args.max_results,
@@ -169,7 +169,7 @@ class CalendarDeleteEventArgs(BaseModel):
 )
 async def calendar_delete_event(args: CalendarDeleteEventArgs, ctx: dict) -> dict:
     user_id = ctx["user_id"]
-    access_token = get_valid_google_access_token(user_id)
+    access_token = await get_valid_google_access_token(user_id)
 
     return _calendar_request(
         access_token=access_token,
