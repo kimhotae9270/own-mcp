@@ -82,7 +82,7 @@ async def oauth_callback(code: str, state: str):
     code_verifier = await _consume_state_from_db(state)
 
     # 2) code -> token 교환
-    flow = make_flow(state=state, use_pkce=False)
+    flow = make_flow(state=state, use_pkce=True)
     flow.code_verifier = code_verifier
     try:
         flow.fetch_token(code=code)

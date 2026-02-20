@@ -15,16 +15,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.db import init_db_pool, close_db_pool
 from app.core.scheduler import start_scheduler, shutdown_scheduler
-from app.core.redis_client import r
+#from app.core.redis_client import r
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 🔥 Startup 영역
     await init_db_pool()          # DB pool 생성
+
     scheduler = start_scheduler()  # 기존 스케줄러 시작
 
     # (선택) Redis 연결 체크
     try:
-        await r.ping()
+        #await r.ping()
         print("✅ Redis connected")
     except Exception as e:
         print("❌ Redis connection failed:", e)
@@ -36,7 +37,7 @@ async def lifespan(app: FastAPI):
         # 🔥 Shutdown 영역
         shutdown_scheduler(scheduler)
         await close_db_pool()     # DB pool 종료
-        await r.close()  # Redis 연결 종료
+        #await r.close()  # Redis 연결 종료
 
 load_mcp_embeddings()
 app = FastAPI(title="MCP Agent API",lifespan=lifespan)

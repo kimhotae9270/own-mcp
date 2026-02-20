@@ -52,5 +52,5 @@ def attach_routes(graph_app):
         )
 
         return ChatResponse(answer=answer, trace=trace)
-
+    return router
 

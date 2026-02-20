@@ -1,6 +1,8 @@
 # app/core/db.py
 import os
 import asyncpg
+import certifi
+import ssl
 from contextlib import asynccontextmanager
 
 _pool: asyncpg.Pool | None = None
@@ -9,9 +11,10 @@ async def init_db_pool() -> None:
     global _pool
     if _pool is not None:
         return
-
+    ctx = ssl.create_default_context(cafile=certifi.where())
     _pool = await asyncpg.create_pool(
         dsn=os.getenv("DATABASE_URL"),
+        ssl=ctx,
         min_size=int(os.getenv("DB_POOL_MIN", "1")),
         max_size=int(os.getenv("DB_POOL_MAX", "10")),
     )

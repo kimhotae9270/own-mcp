@@ -8,7 +8,7 @@ from agent.llm.client import get_llm
 from agent.tool_registry.registry import get_tools_by_tags, call_tool
 from agent.tool_registry.adapters import tools_to_openai_tools
 from datetime import datetime, timezone, timedelta
-from zoneinfo import ZoneInfo
+
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
 # 툴 등록을 위해 import
