@@ -1,5 +1,5 @@
 from fastapi import APIRouter,Depends
-from app.schemas import ChatRequest, ChatResponse
+from app.schemas import ChatRequest, ChatResponse, ConversationItem, MessageItem
 from app.core.security import get_current_user_id  # 너가 만들/이미 있는 함수
 from app.services.chat_memory import load_mem, save_mem
 from app.services.chat_repository import ensure_conversation, append_message
@@ -52,5 +52,44 @@ def attach_routes(graph_app):
         )
 
         return ChatResponse(answer=answer, trace=trace)
+
+    @router.get("/conversations", response_model=list[ConversationItem])
+    async def list_conversations(user_id: int = Depends(get_current_user_id)):
+        async with db_conn() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id::text AS id, title, last_active_at
+                FROM conversations
+                WHERE user_id=$1
+                ORDER BY last_active_at DESC
+                LIMIT 50
+                """,
+                user_id
+            )
+
+        return [dict(r) for r in rows]
+
+    @router.get(
+        "/conversations/{conversation_id}/messages",
+        response_model=list[MessageItem]
+    )
+    async def get_messages(
+            conversation_id: str,
+            user_id: int = Depends(get_current_user_id)
+    ):
+        async with db_conn() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT role, content, created_at
+                FROM messages
+                WHERE conversation_id=$1 AND user_id=$2
+                ORDER BY created_at ASC
+                LIMIT 200
+                """,
+                conversation_id,
+                user_id
+            )
+
+        return [dict(r) for r in rows]
     return router
 

@@ -18,5 +18,6 @@ dependencies = [
     "pdfminer-six>=20260107",
     "psycopg2>=2.9.11",
     "pydantic>=2.12.5",
+    "rapidfuzz>=3.14.3",
     "youtube-transcript-api>=1.2.3",
 ]

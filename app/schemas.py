@@ -1,6 +1,6 @@
 from typing import Literal, Optional, List
 from pydantic import BaseModel, Field
-
+from datetime import datetime
 
 Mode = Literal["AUTO", "CHAT", "CALENDAR"]
 
@@ -14,3 +14,13 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     trace: List[str] = []
+
+class ConversationItem(BaseModel):
+    id: str
+    title: Optional[str] = None
+    last_active_at: datetime
+
+class MessageItem(BaseModel):
+    role: str
+    content: str
+    created_at: datetime
