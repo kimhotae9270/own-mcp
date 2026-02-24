@@ -61,8 +61,21 @@ class HandoffCalendarInput(BaseModel):
 @register_tool(
     name="handoff_calendar_agent",
     description=(
-        "캘린더/일정 관련 요청이면 이 도구를 호출하세요. "
-        "이 도구는 ReAct에서 캘린더 전용 에이전트 노드로 라우팅하기 위한 핸드오프 신호를 만듭니다."
+        "If the user request is about calendars, schedules, events, or time-based task management, "
+        "you MUST call this tool.\n\n"
+
+        "Use this tool when the user wants to:\n"
+        "- Add, create, register, or schedule an event\n"
+        "- Modify, update, or edit an existing event\n"
+        "- Delete or cancel an event\n"
+        "- List, show, or check scheduled events\n"
+        "- Ask what is scheduled on a specific date or time\n\n"
+
+        "DO NOT answer directly in natural language for calendar-related requests.\n"
+        "Instead, immediately call this tool.\n\n"
+
+        "Do NOT call this tool for general date questions, time calculations, "
+        "or non-calendar informational queries."
     ),
     input_model=HandoffCalendarInput,
     tags=["handoff", "routing"],

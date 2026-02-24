@@ -1,7 +1,7 @@
 from fastapi import APIRouter,Depends
 from app.schemas import ChatRequest, ChatResponse, ConversationItem, MessageItem
 from app.core.security import get_current_user_id  # 너가 만들/이미 있는 함수
-from app.services.chat_memory import load_mem, save_mem
+#from app.services.chat_memory import load_mem, save_mem
 from app.services.chat_repository import ensure_conversation, append_message
 from app.core.db import db_conn
 
@@ -19,7 +19,7 @@ def attach_routes(graph_app):
             conv_uuid = await ensure_conversation(db, user_id=user_id, conversation_id=req.conversation_id)
 
             # 2) Redis: 숏텀 메모리 로드
-            mem = await load_mem(user_id, req.conversation_id)
+            #mem = await load_mem(user_id, req.conversation_id)
 
             # 3) DB append: user 메시지 저장
             await append_message(db, user_id=user_id, conversation_id=conv_uuid, role="user", content=req.text)
@@ -31,7 +31,7 @@ def attach_routes(graph_app):
                 "trace": [],
                 "ctx": {
                     "user_id": user_id,
-                    "memory": mem,
+                    #"memory": mem,
                 },
             })
 
@@ -43,13 +43,13 @@ def attach_routes(graph_app):
                                  trace=trace)
 
         # 6) Redis 업데이트 (graph가 summary/state를 주면 같이 저장)
-        await save_mem(
-            user_id, req.conversation_id,
-            user_text=req.text,
-            assistant_text=answer,
-            summary=out.get("summary"),
-            state=out.get("state"),
-        )
+        # await save_mem(
+        #     user_id, req.conversation_id,
+        #     user_text=req.text,
+        #     assistant_text=answer,
+        #     summary=out.get("summary"),
+        #     state=out.get("state"),
+        # )
 
         return ChatResponse(answer=answer, trace=trace)
 

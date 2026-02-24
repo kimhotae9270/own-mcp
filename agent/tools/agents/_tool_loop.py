@@ -206,6 +206,39 @@ def append_tool_result(
         "content": content,
     })
 
+def store_tool_observation(
+    ctx: Dict[str, Any],
+    *,
+    tool_call_id: str,
+    tool_name: str,
+    arguments: Dict[str, Any],
+    observation: Any,
+) -> None:
+    """
+    Store full tool observations in ctx so downstream nodes (e.g., chat_node) can use them.
+
+    We intentionally keep the *tool message content* sent back to the LLM small to reduce latency and
+    to prevent the ReAct node from seeing large payloads. The full payload lives in ctx['_tool_store'].
+    """
+    if not isinstance(ctx, dict):
+        return
+
+    store = ctx.setdefault("_tool_store", {})
+    if not isinstance(store, dict):
+        store = {}
+        ctx["_tool_store"] = store
+
+    store[str(tool_call_id)] = {
+        "tool": str(tool_name),
+        "arguments": arguments,
+        "result": observation,   # ✅ FULL 결과 저장
+    }
+
+
+def minimal_tool_ack(tool_call_id: str) -> str:
+    """Small tool result payload returned to the model."""
+    return json.dumps({"ok": True, "stored": True, "key": str(tool_call_id)}, ensure_ascii=False)
+
 
 async def run_openai_tool_loop(
     *,
@@ -255,20 +288,27 @@ async def run_openai_tool_loop(
             "used_tools": used_tools,
             "trace": trace,
         }
-
+    import time
     for step_offset in range(1, steps_left + 1):
         step = int(start_step) + step_offset
         trace.append(f"{trace_prefix}: step {step}/{max_steps}")
-
+        print("=== LLM INPUT MESSAGES ===")
+        for m in messages:
+            print(m)
+        print("===========================")
+        t0 = time.perf_counter()
         resp = await llm.chat.completions.create(
             model=model,
             messages=messages,
             tools=tools_spec,
             tool_choice="auto",
         )
-
+        t1 = time.perf_counter()
+        print(f"{trace_prefix}: llm_ms={(t1 - t0) * 1000:.1f}")
         msg = resp.choices[0].message
-
+        print("=== LLM OUTPUT MESSAGES ===")
+        print(msg)
+        print("===========================")
         calls = extract_tool_calls(msg)
         if not calls:
             trace.append(f"{trace_prefix}: finished")
@@ -338,10 +378,21 @@ async def run_openai_tool_loop(
                 }
 
             observation = await call_tool_fn(name, args, ctx)
+
+            # ✅ full 결과는 ctx에 저장
+            store_tool_observation(
+                ctx,
+                tool_call_id=call["id"],
+                tool_name=name,
+                arguments=args,
+                observation=observation,
+            )
+
+            # ✅ LLM에는 최소 ACK만 노출
             append_tool_result(
                 messages,
                 tool_call_id=call["id"],
-                content=tool_result_serializer(observation),
+                content=minimal_tool_ack(call["id"]),
             )
             continue
 
@@ -393,10 +444,19 @@ async def run_openai_tool_loop(
 
             seen.add(sig)
             observation = await call_tool_fn(name, args, ctx)
+
+            store_tool_observation(
+                ctx,
+                tool_call_id=call["id"],
+                tool_name=name,
+                arguments=args,
+                observation=observation,
+            )
+
             append_tool_result(
                 messages,
                 tool_call_id=call["id"],
-                content=tool_result_serializer(observation),
+                content=minimal_tool_ack(call["id"]),
             )
 
     # max steps exceeded

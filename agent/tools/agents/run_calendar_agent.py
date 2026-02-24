@@ -14,7 +14,7 @@ from agent.tools.agents._tool_loop import (
     run_openai_tool_loop,
 )
 
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 CALENDAR_MAX_STEPS = int(os.getenv("CALENDAR_MAX_STEPS", "6"))
 
 # 툴 등록을 위해 import

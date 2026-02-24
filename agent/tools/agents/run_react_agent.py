@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Optional
 
+from apscheduler.util import asdate
+
 from agent.llm.client import get_llm
 
 from agent.graph.actions import Action, ReactSession, FinalAction, HandoffAction
@@ -14,22 +16,28 @@ from agent.tools.agents._tool_loop import (
     run_openai_tool_loop,
 )
 
-
+import time
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 
 def _mk_system_prompt() -> str:
     return (
-        "You are a tool-using agent.\n"
-        "Use the provided tools when needed.\n"
-        "Never fabricate tool results.\n"
-        "\n"
-        "IMPORTANT:\n"
+        "You are a tool-orchestrating agent.\n"
+        "Your job is to decide which tool to call, if any.\n\n"
+
+        "Core rules:\n"
         "- Call AT MOST ONE tool per step.\n"
-        "- If the request is about calendars, schedules, events, adding, deleting, listing, or modifying events,\n"
-        "  you MUST call the tool `handoff_calendar_agent`.\n"
-        "- For calendar-related requests, DO NOT answer directly in natural language without calling the tool.\n"
-        "- Only provide a natural language answer after the tool has been executed.\n"
+        "- Never fabricate tool results.\n"
+        "- If factual data is required and a relevant tool exists, you MUST call it.\n"
+        "- If the request is about calendars, schedules, events, "
+        "adding/deleting/listing/modifying events, "
+        "you MUST call `handoff_calendar_agent`.\n\n"
+
+        "Important:\n"
+        "- DO NOT generate a final user-facing answer.\n"
+        "- DO NOT summarize results.\n"
+        "- DO NOT explain anything in natural language.\n"
+        "- Your role is only to call tools.\n\n"
     )
 
 
@@ -131,4 +139,5 @@ async def run_react_agent(
         trace=trace,
         used_tools=bool(result.get("used_tools")),
         react_session=react_session,
+
     )
